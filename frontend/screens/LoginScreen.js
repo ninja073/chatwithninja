@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { Alert } from 'react-native';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { ChatState } from '../context/ChatProvider';
+import { YStack, H2, ParsedText, Input, Button, Text, XStack, Anchor, Form, Spinner } from 'tamagui';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
     const { setUser } = ChatState();
 
     const handleLogin = async () => {
+        setLoading(true);
         try {
             const config = { headers: { "Content-type": "application/json" } };
+            // Note: Use your IP address here as per README instructions if not localhost
             const { data } = await axios.post("http://192.168.29.218:5001/api/user/login", { email, password }, config);
 
             await SecureStore.setItemAsync('userInfo', JSON.stringify(data));
@@ -19,36 +23,58 @@ const LoginScreen = ({ navigation }) => {
             navigation.navigate('ChatList');
         } catch (error) {
             console.log(error);
-            alert("Login Failed");
+            Alert.alert("Login Failed", error.response?.data?.message || "An error occurred");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Login</Text>
-            <TextInput
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-            />
-            <TextInput
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                style={styles.input}
-            />
-            <Button title="Login" onPress={handleLogin} />
-            <Button title="Go to Register" onPress={() => navigation.navigate('Register')} />
-        </View>
+        <YStack f={1} bc="$background" ai="center" jc="center" p="$4" space="$5">
+            <YStack space="$2" ai="center">
+                <H2 color="$color">Welcome Back</H2>
+                <Text color="$color10">Sign in to continue</Text>
+            </YStack>
+
+            <YStack w="100%" space="$4" maw={400}>
+                <Input
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    size="$4"
+                />
+                <Input
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    size="$4"
+                />
+
+                <Button
+                    theme="active"
+                    size="$4"
+                    onPress={handleLogin}
+                    disabled={loading}
+                    icon={loading ? <Spinner /> : undefined}
+                >
+                    Login
+                </Button>
+            </YStack>
+
+            <XStack space="$2">
+                <Text color="$color">Don't have an account?</Text>
+                <Text
+                    color="$blue10"
+                    fontWeight="bold"
+                    onPress={() => navigation.navigate('Register')}
+                >
+                    Register
+                </Text>
+            </XStack>
+        </YStack>
     );
 };
-
-const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', padding: 20 },
-    title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-    input: { height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10, padding: 8 }
-});
 
 export default LoginScreen;

@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-
+import { Alert } from 'react-native';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { ChatState } from '../context/ChatProvider';
+import { YStack, H2, Input, Button, Text, XStack, Spinner } from 'tamagui';
 
 const RegisterScreen = ({ navigation }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
     const { setUser } = ChatState();
 
     const handleRegister = async () => {
+        setLoading(true);
         try {
             const config = { headers: { "Content-type": "application/json" } };
             const { data } = await axios.post("http://192.168.29.218:5001/api/user", { name, email, password }, config);
@@ -21,42 +23,64 @@ const RegisterScreen = ({ navigation }) => {
             navigation.navigate('ChatList');
         } catch (error) {
             console.log(error);
-            alert("Registration Failed");
+            Alert.alert("Registration Failed", error.response?.data?.message || "An error occurred");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Register</Text>
-            <TextInput
-                placeholder="Name"
-                value={name}
-                onChangeText={setName}
-                style={styles.input}
-            />
-            <TextInput
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-            />
-            <TextInput
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                style={styles.input}
-            />
-            <Button title="Register" onPress={handleRegister} />
-            <Button title="Go to Login" onPress={() => navigation.navigate('Login')} />
-        </View>
+        <YStack f={1} bc="$background" ai="center" jc="center" p="$4" space="$5">
+            <YStack space="$2" ai="center">
+                <H2 color="$color">Create Account</H2>
+                <Text color="$color10">Sign up to get started</Text>
+            </YStack>
+
+            <YStack w="100%" space="$4" maw={400}>
+                <Input
+                    placeholder="Full Name"
+                    value={name}
+                    onChangeText={setName}
+                    size="$4"
+                />
+                <Input
+                    placeholder="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    size="$4"
+                />
+                <Input
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    size="$4"
+                />
+
+                <Button
+                    theme="active"
+                    size="$4"
+                    onPress={handleRegister}
+                    disabled={loading}
+                    icon={loading ? <Spinner /> : undefined}
+                >
+                    Register
+                </Button>
+            </YStack>
+
+            <XStack space="$2">
+                <Text color="$color">Already have an account?</Text>
+                <Text
+                    color="$blue10"
+                    fontWeight="bold"
+                    onPress={() => navigation.navigate('Login')}
+                >
+                    Login
+                </Text>
+            </XStack>
+        </YStack>
     );
 };
-
-const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: 'center', padding: 20 },
-    title: { fontSize: 24, marginBottom: 20, textAlign: 'center' },
-    input: { height: 40, borderColor: 'gray', borderWidth: 1, marginBottom: 10, padding: 8 }
-});
 
 export default RegisterScreen;
